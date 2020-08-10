@@ -5,6 +5,7 @@ from django.contrib.auth.middleware import RemoteUserMiddleware as RemoteUserMid
 from django.db import ProgrammingError
 from django.http import Http404, HttpResponseRedirect
 from django.urls import reverse
+from django_auth_ldap.backend import LDAPBackend
 
 from .api import is_api_request
 from .views import server_error
@@ -48,8 +49,12 @@ class RemoteUserMiddleware(RemoteUserMiddleware_):
         if not settings.REMOTE_AUTH_ENABLED:
             return
 
-        return super().process_request(request)
+        if not request.user.is_authenticated:
+            super().process_request(request)
+            if request.user.is_authenticated:
+                LDAPBackend().populate_user(request.user.username)
 
+        return
 
 class APIVersionMiddleware(object):
     """
